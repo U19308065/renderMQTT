@@ -42,10 +42,10 @@ mqttClient.on('message', (topic, message) => {
     console.log(`Mensaje recibido en ${topic}: ${message.toString()}`);
     try {
         const data = JSON.parse(message.toString());
-        const { temperatura, humedad, fecha } = data;
-
+        const { temperatura, humedad, fecha, hora } = data;
+        const fechaHora = `${fecha} ${hora}`;
         const query = 'INSERT INTO mediciones (temperatura, humedad, fecha) VALUES (?, ?, ?)';
-        db.query(query, [temperatura, humedad, fecha], (err, result) => {
+        db.query(query, [temperatura, humedad, fechaHora], (err, result) => {
             if (err) console.error('Error insertando en BD:', err);
             else console.log('Dato guardado en BD:', result.insertId);
         });
