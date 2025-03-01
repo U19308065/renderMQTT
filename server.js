@@ -8,21 +8,39 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Conexión a la base de datos MySQL
-const db = mysql.createConnection({
+const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
-    database: process.env.DB_NAME
-});
+    database: process.env.DB_NAME,
+    connectTimeout: 10000 // Aumentar el tiempo de espera de la conexión
+};
 
-db.connect(err => {
-    if (err) {
-        console.error('Error conectando a la BD:', err);
-        return;
-    }
-    console.log('Conectado a la BD MySQL');
-});
+let db;
+
+function handleDisconnect() {
+    db = mysql.createConnection(dbConfig);
+
+    db.connect(err => {
+        if (err) {
+            console.error('Error conectando a la BD:', err);
+            setTimeout(handleDisconnect, 2000); // Intentar reconectar después de 2 segundos
+        } else {
+            console.log('Conectado a la BD MySQL');
+        }
+    });
+
+    db.on('error', err => {
+        console.error('Error en la conexión de la BD:', err);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+            handleDisconnect(); // Reconectar si la conexión se pierde
+        } else {
+            throw err;
+        }
+    });
+}
+
+handleDisconnect();
 
 // Configurar conexión con el broker MQTT
 const mqttClient = mqtt.connect(process.env.MQTT_BROKER, {
