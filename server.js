@@ -4,6 +4,7 @@ const mqtt = require('mqtt');
 const mysql = require('mysql2');
 const cors = require('cors');
 const http = require('http');
+const https = require('https'); // Importar el módulo https
 
 const app = express();
 app.use(express.json());
@@ -83,7 +84,7 @@ app.get('/datos', (req, res) => {
 
 // Mantener el servidor activo enviando solicitudes periódicas a sí mismo
 setInterval(() => {
-    http.get('https://rendermqtt2025.onrender.com');
+    https.get('https://rendermqtt2025.onrender.com'); // Cambiar http por https
 }, 10 * 60 * 1000); // Cada 10 minutos
 
 const PORT = process.env.PORT || 3000;
