@@ -3,6 +3,7 @@ const express = require('express');
 const mqtt = require('mqtt');
 const mysql = require('mysql2');
 const cors = require('cors');
+const http = require('http');
 
 const app = express();
 app.use(express.json());
@@ -79,6 +80,11 @@ app.get('/datos', (req, res) => {
         res.json(results);
     });
 });
+
+// Mantener el servidor activo enviando solicitudes periódicas a sí mismo
+setInterval(() => {
+    http.get('https://rendermqtt2025.onrender.com');
+}, 10 * 60 * 1000); // Cada 5 minutos
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
