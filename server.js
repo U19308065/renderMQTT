@@ -3,8 +3,8 @@ const express = require('express');
 const mqtt = require('mqtt');
 const mysql = require('mysql2');
 const cors = require('cors');
-const http = require('http');
-const https = require('https'); // Importar el módulo https
+const https = require('https');
+const crypto = require('crypto');
 
 const app = express();
 app.use(express.json());
@@ -15,7 +15,7 @@ const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    connectTimeout: 10000 // Aumentar el tiempo de espera de la conexión
+    connectTimeout: 10000
 };
 
 let db;
@@ -26,7 +26,7 @@ function handleDisconnect() {
     db.connect(err => {
         if (err) {
             console.error('Error conectando a la BD:', err);
-            setTimeout(handleDisconnect, 2000); // Intentar reconectar después de 2 segundos
+            setTimeout(handleDisconnect, 2000);
         } else {
             console.log('Conectado a la BD MySQL');
         }
@@ -35,7 +35,7 @@ function handleDisconnect() {
     db.on('error', err => {
         console.error('Error en la conexión de la BD:', err);
         if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-            handleDisconnect(); // Reconectar si la conexión se pierde
+            handleDisconnect();
         } else {
             throw err;
         }
@@ -44,7 +44,6 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-// Configurar conexión con el broker MQTT
 const mqttClient = mqtt.connect(process.env.MQTT_BROKER, {
     username: process.env.MQTT_USER,
     password: process.env.MQTT_PASS
@@ -57,10 +56,19 @@ mqttClient.on('connect', () => {
     });
 });
 
-// Recibir datos desde MQTT y guardarlos en la base de datos
+const recentMessages = new Set();
+
 mqttClient.on('message', (topic, message) => {
     console.log(`Mensaje recibido en ${topic}: ${message.toString()}`);
     try {
+        const hash = crypto.createHash('sha256').update(message).digest('hex');
+        if (recentMessages.has(hash)) {
+            console.log('Mensaje duplicado ignorado');
+            return;
+        }
+        recentMessages.add(hash);
+        setTimeout(() => recentMessages.delete(hash), 60000);
+
         const data = JSON.parse(message.toString());
         const { temperatura, humedad, fecha, hora } = data;
         const fechaHora = `${fecha} ${hora}`;
@@ -74,7 +82,6 @@ mqttClient.on('message', (topic, message) => {
     }
 });
 
-// Endpoint para obtener datos desde la base de datos
 app.get('/datos', (req, res) => {
     db.query('SELECT * FROM mediciones ORDER BY id DESC LIMIT 10', (err, results) => {
         if (err) return res.status(500).send(err);
@@ -82,10 +89,9 @@ app.get('/datos', (req, res) => {
     });
 });
 
-// Mantener el servidor activo enviando solicitudes periódicas a sí mismo
 setInterval(() => {
-    https.get('https://rendermqtt2025.onrender.com'); // Cambiar http por https
-}, 10 * 60 * 1000); // Cada 10 minutos
+    https.get('https://rendermqtt2025.onrender.com');
+}, 10 * 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
