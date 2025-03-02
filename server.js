@@ -84,9 +84,9 @@ app.get('/datos', (req, res) => {
 // Mantener el servidor activo enviando solicitudes periódicas a sí mismo
 setInterval(() => {
     http.get('https://rendermqtt2025.onrender.com');
-}, 10 * 60 * 1000); // Cada 5 minutos
+}, 10 * 60 * 1000); // Cada 10 minutos
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
