@@ -70,7 +70,7 @@ app.get('/datos', (req, res) => {
 // 🌟 Mantener activo el servidor en Render
 setInterval(() => {
     https.get('https://rendermqtt2025.onrender.com');
-}, 14 * 60 * 1000);
+}, 10 * 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
