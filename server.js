@@ -10,39 +10,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const dbConfig = {
+// 🌟 Usamos un pool de conexiones para MySQL
+const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    connectTimeout: 10000
-};
-
-let db;
-
-function handleDisconnect() {
-    db = mysql.createConnection(dbConfig);
-
-    db.connect(err => {
-        if (err) {
-            console.error('Error conectando a la BD:', err);
-            setTimeout(handleDisconnect, 2000);
-        } else {
-            console.log('Conectado a la BD MySQL');
-        }
-    });
-
-    db.on('error', err => {
-        console.error('Error en la conexión de la BD:', err);
-        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-            handleDisconnect();
-        } else {
-            throw err;
-        }
-    });
-}
-
-handleDisconnect();
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
 
 const mqttClient = mqtt.connect(process.env.MQTT_BROKER, {
     username: process.env.MQTT_USER,
@@ -73,9 +50,10 @@ mqttClient.on('message', (topic, message) => {
         const { temperatura, humedad, fecha, hora } = data;
         const fechaHora = `${fecha} ${hora}`;
         const query = 'INSERT INTO mediciones (temperatura, humedad, fecha) VALUES (?, ?, ?)';
+
         db.query(query, [temperatura, humedad, fechaHora], (err, result) => {
-            if (err) console.error('Error insertando en BD:', err);
-            else console.log('Dato guardado en BD:', result.insertId);
+            if (err) console.error('❌ Error insertando en BD:', err);
+            else console.log('✅ Dato guardado en BD:', result.insertId);
         });
     } catch (err) {
         console.error('Error procesando mensaje MQTT:', err);
@@ -89,6 +67,7 @@ app.get('/datos', (req, res) => {
     });
 });
 
+// 🌟 Mantener activo el servidor en Render
 setInterval(() => {
     https.get('https://rendermqtt2025.onrender.com');
 }, 14 * 60 * 1000);
