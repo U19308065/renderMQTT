@@ -38,23 +38,30 @@ const recentMessages = new Set();
 mqttClient.on('message', (topic, message) => {
     console.log(`Mensaje recibido en ${topic}: ${message.toString()}`);
     try {
-        const hash = crypto.createHash('sha256').update(message).digest('hex');
-        if (recentMessages.has(hash)) {
-            console.log('Mensaje duplicado ignorado');
-            return;
+        const messageString = message.toString();
+        
+        // Verificar si el mensaje es un JSON válido
+        if (messageString.trim().startsWith('{') && messageString.trim().endsWith('}')) {
+            const hash = crypto.createHash('sha256').update(message).digest('hex');
+            if (recentMessages.has(hash)) {
+                console.log('Mensaje duplicado ignorado');
+                return;
+            }
+            recentMessages.add(hash);
+            setTimeout(() => recentMessages.delete(hash), 60000);
+
+            const data = JSON.parse(messageString);
+            const { temperatura, humedad, fecha, hora } = data;
+            const fechaHora = `${fecha} ${hora}`;
+            const query = 'INSERT INTO mediciones (temperatura, humedad, fecha) VALUES (?, ?, ?)';
+
+            db.query(query, [temperatura, humedad, fechaHora], (err, result) => {
+                if (err) console.error('❌ Error insertando en BD:', err);
+                else console.log('✅ Dato guardado en BD:', result.insertId);
+            });
+        } else {
+            console.log('Mensaje no es un JSON válido, ignorado');
         }
-        recentMessages.add(hash);
-        setTimeout(() => recentMessages.delete(hash), 60000);
-
-        const data = JSON.parse(message.toString());
-        const { temperatura, humedad, fecha, hora } = data;
-        const fechaHora = `${fecha} ${hora}`;
-        const query = 'INSERT INTO mediciones (temperatura, humedad, fecha) VALUES (?, ?, ?)';
-
-        db.query(query, [temperatura, humedad, fechaHora], (err, result) => {
-            if (err) console.error('❌ Error insertando en BD:', err);
-            else console.log('✅ Dato guardado en BD:', result.insertId);
-        });
     } catch (err) {
         console.error('Error procesando mensaje MQTT:', err);
     }
