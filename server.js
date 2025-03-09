@@ -52,6 +52,13 @@ mqttClient.on('message', (topic, message) => {
 
             const data = JSON.parse(messageString);
             const { temperatura, humedad, fecha, hora } = data;
+
+            // Verificar si los valores son válidos
+            if (isNaN(temperatura) || isNaN(humedad) || !fecha || !hora) {
+                console.warn('Advertencia: Datos de medición inválidos recibidos:', data);
+                return;
+            }
+
             const fechaHora = `${fecha} ${hora}`;
             const query = 'INSERT INTO mediciones (temperatura, humedad, fecha) VALUES (?, ?, ?)';
 
