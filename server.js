@@ -39,46 +39,46 @@ mqttClient.on('message', (topic, message) => {
     console.log(`Mensaje recibido en ${topic}: ${message.toString()}`);
     try {
         const messageString = message.toString().trim();
-        
+
         // Verificar si el mensaje es un JSON válido
-        if (messageString.startsWith('{') && messageString.endsWith('}')) {
-            // Verificar si el mensaje contiene 'NaN'
-            if (messageString.includes('NaN')) {
-                console.warn('Advertencia: Datos de medición inválidos recibidos (contiene NaN):', messageString);
-                return;
-            }
-
-            const data = JSON.parse(messageString);
-            const { temperatura, humedad, fecha, hora } = data;
-
-            // Verificar si los valores son válidos
-            if (isNaN(temperatura) || isNaN(humedad) || !fecha || !hora) {
-                console.warn('Advertencia: Datos de medición inválidos recibidos:', data);
-                return;
-            }
-
-            const hash = crypto.createHash('sha256').update(messageString).digest('hex');
-            if (recentMessages.has(hash)) {
-                console.log('Mensaje duplicado ignorado');
-                return;
-            }
-            recentMessages.add(hash);
-            setTimeout(() => recentMessages.delete(hash), 60000);
-
-            const fechaHora = `${fecha} ${hora}`;
-            const query = 'INSERT INTO mediciones (temperatura, humedad, fecha) VALUES (?, ?, ?)';
-
-            db.query(query, [temperatura, humedad, fechaHora], (err, result) => {
-                if (err) console.error('❌ Error insertando en BD:', err);
-                else console.log('✅ Dato guardado en BD:', result.insertId);
-            });
-        } else {
+        if (!messageString.startsWith('{') || !messageString.endsWith('}')) {
             console.log('Mensaje no es un JSON válido, ignorado');
+            return;
         }
+
+        const data = JSON.parse(messageString);
+        const { temperatura, humedad, fecha, hora } = data;
+
+        // Validar si los valores son NaN o vacíos
+        if (
+            temperatura === null || humedad === null ||
+            isNaN(temperatura) || isNaN(humedad) ||
+            fecha.trim() === '' || hora.trim() === ''
+        ) {
+            console.warn('Advertencia: Datos de medición inválidos recibidos (contiene NaN o valores vacíos):', data);
+            return;
+        }
+
+        const hash = crypto.createHash('sha256').update(messageString).digest('hex');
+        if (recentMessages.has(hash)) {
+            console.log('Mensaje duplicado ignorado');
+            return;
+        }
+        recentMessages.add(hash);
+        setTimeout(() => recentMessages.delete(hash), 60000);
+
+        const fechaHora = `${fecha} ${hora}`;
+        const query = 'INSERT INTO mediciones (temperatura, humedad, fecha) VALUES (?, ?, ?)';
+
+        db.query(query, [temperatura, humedad, fechaHora], (err, result) => {
+            if (err) console.error('❌ Error insertando en BD:', err);
+            else console.log('✅ Dato guardado en BD:', result.insertId);
+        });
     } catch (err) {
         console.error('Error procesando mensaje MQTT:', err);
     }
 });
+
 
 // 🌟 Mantener activo el servidor en Render
 setInterval(() => {
