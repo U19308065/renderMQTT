@@ -38,24 +38,10 @@ const recentMessages = new Set();
 mqttClient.on('message', (topic, message) => {
     console.log(`Mensaje recibido en ${topic}: ${message.toString()}`);
     try {
-        const messageString = message.toString();
+        const messageString = message.toString().trim();
         
         // Verificar si el mensaje es un JSON válido
-        if (messageString.trim().startsWith('{') && messageString.trim().endsWith('}')) {
-            // Verificar si el mensaje contiene 'NaN'
-            if (messageString.includes('NaN')) {
-                console.warn('Advertencia: Datos de medición inválidos recibidos (contiene NaN):', messageString);
-                return;
-            }
-
-            const hash = crypto.createHash('sha256').update(message).digest('hex');
-            if (recentMessages.has(hash)) {
-                console.log('Mensaje duplicado ignorado');
-                return;
-            }
-            recentMessages.add(hash);
-            setTimeout(() => recentMessages.delete(hash), 60000);
-
+        if (messageString.startsWith('{') && messageString.endsWith('}')) {
             const data = JSON.parse(messageString);
             const { temperatura, humedad, fecha, hora } = data;
 
@@ -64,6 +50,14 @@ mqttClient.on('message', (topic, message) => {
                 console.warn('Advertencia: Datos de medición inválidos recibidos:', data);
                 return;
             }
+
+            const hash = crypto.createHash('sha256').update(messageString).digest('hex');
+            if (recentMessages.has(hash)) {
+                console.log('Mensaje duplicado ignorado');
+                return;
+            }
+            recentMessages.add(hash);
+            setTimeout(() => recentMessages.delete(hash), 60000);
 
             const fechaHora = `${fecha} ${hora}`;
             const query = 'INSERT INTO mediciones (temperatura, humedad, fecha) VALUES (?, ?, ?)';
@@ -78,13 +72,6 @@ mqttClient.on('message', (topic, message) => {
     } catch (err) {
         console.error('Error procesando mensaje MQTT:', err);
     }
-});
-
-app.get('/datos', (req, res) => {
-    db.query('SELECT * FROM mediciones ORDER BY id DESC LIMIT 10', (err, results) => {
-        if (err) return res.status(500).send(err);
-        res.json(results);
-    });
 });
 
 // 🌟 Mantener activo el servidor en Render
