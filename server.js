@@ -42,6 +42,12 @@ mqttClient.on('message', (topic, message) => {
         
         // Verificar si el mensaje es un JSON válido
         if (messageString.trim().startsWith('{') && messageString.trim().endsWith('}')) {
+            // Verificar si el mensaje contiene 'NaN'
+            if (messageString.includes('NaN')) {
+                console.warn('Advertencia: Datos de medición inválidos recibidos (contiene NaN):', messageString);
+                return;
+            }
+
             const hash = crypto.createHash('sha256').update(message).digest('hex');
             if (recentMessages.has(hash)) {
                 console.log('Mensaje duplicado ignorado');
