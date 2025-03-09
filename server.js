@@ -42,6 +42,12 @@ mqttClient.on('message', (topic, message) => {
         
         // Verificar si el mensaje es un JSON válido
         if (messageString.startsWith('{') && messageString.endsWith('}')) {
+            // Verificar si el mensaje contiene 'NaN'
+            if (messageString.includes('NaN')) {
+                console.warn('Advertencia: Datos de medición inválidos recibidos (contiene NaN):', messageString);
+                return;
+            }
+
             const data = JSON.parse(messageString);
             const { temperatura, humedad, fecha, hora } = data;
 
