@@ -1,0 +1,11 @@
+Control panel username:	b9_38425474
+Control panel password:	**********
+Control panel URL:	cpanel.byethost9.com
+MySQL username	b9_38425474
+MySQL password:	**********
+MySQL hostname:	sql301.byethost9.com
+FTP username:	b9_38425474
+FTP password:	**********
+FTP host name:	ftp.byethost9.com
+Your Website URL:	http://proyectomqtt.byethost9.com
+ 	 

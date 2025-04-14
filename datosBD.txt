@@ -6,9 +6,9 @@ CREATE TABLE IF NOT EXISTS mediciones (
     fecha DATETIME NOT NULL
 );
 
-gahavak480@inveitro.com
+fosofa3878@anlocc.com
 Host: sql10.freesqldatabase.com
-Database name: sql10771198
-Database user: sql10771198
-Database password: XgPMP5ga1T
+Database name: sql10772989
+Database user: sql10772989
+Database password: lFrjTbt9Nv
 Port number: 3306
