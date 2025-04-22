@@ -6,9 +6,11 @@ CREATE TABLE IF NOT EXISTS mediciones (
     fecha DATETIME NOT NULL
 );
 
-fosofa3878@anlocc.com
+Your account number is: 1295699
+Your new database is now ready to use.
+To connect to your database use these details;
 Host: sql10.freesqldatabase.com
-Database name: sql10772989
-Database user: sql10772989
-Database password: lFrjTbt9Nv
+Database name: sql10774707
+Database user: sql10774707
+Database password: N1iHE9JMRs
 Port number: 3306
